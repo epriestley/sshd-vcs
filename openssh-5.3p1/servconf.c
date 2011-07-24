@@ -1,4 +1,4 @@
-/* $OpenBSD: servconf.c,v 1.195 2009/04/14 21:10:54 jj Exp $ */
+  /* $OpenBSD: servconf.c,v 1.195 2009/04/14 21:10:54 jj Exp $ */
 /*
  * Copyright (c) 1995 Tatu Ylonen <ylo@cs.hut.fi>, Espoo, Finland
  *                    All rights reserved
@@ -122,6 +122,7 @@ initialize_server_options(ServerOptions *options)
 	options->client_alive_count_max = -1;
 	options->authorized_keys_file = NULL;
 	options->authorized_keys_file2 = NULL;
+	options->authorized_keys_script = NULL;
 	options->num_accept_env = 0;
 	options->permit_tun = -1;
 	options->num_permitted_opens = -1;
@@ -302,6 +303,7 @@ typedef enum {
 	sBanner, sUseDNS, sHostbasedAuthentication,
 	sHostbasedUsesNameFromPacketOnly, sClientAliveInterval,
 	sClientAliveCountMax, sAuthorizedKeysFile, sAuthorizedKeysFile2,
+	sAuthorizedKeysScript,
 	sGssAuthentication, sGssCleanupCreds, sAcceptEnv, sPermitTunnel,
 	sMatch, sPermitOpen, sForceCommand, sChrootDirectory,
 	sUsePrivilegeSeparation, sAllowAgentForwarding,
@@ -417,6 +419,7 @@ static struct {
 	{ "clientalivecountmax", sClientAliveCountMax, SSHCFG_GLOBAL },
 	{ "authorizedkeysfile", sAuthorizedKeysFile, SSHCFG_GLOBAL },
 	{ "authorizedkeysfile2", sAuthorizedKeysFile2, SSHCFG_GLOBAL },
+  { "authorizedkeysscript", sAuthorizedKeysScript, SSHCFG_GLOBAL },
 	{ "useprivilegeseparation", sUsePrivilegeSeparation, SSHCFG_GLOBAL},
 	{ "acceptenv", sAcceptEnv, SSHCFG_GLOBAL },
 	{ "permittunnel", sPermitTunnel, SSHCFG_GLOBAL },
@@ -1191,6 +1194,10 @@ process_server_config_line(ServerOptions *options, char *line,
 		    &options->authorized_keys_file2;
 		goto parse_filename;
 
+	case sAuthorizedKeysScript:
+		charptr = &options->authorized_keys_script;
+		goto parse_filename;
+
 	case sClientAliveInterval:
 		intptr = &options->client_alive_interval;
 		goto parse_time;
@@ -1625,6 +1632,7 @@ dump_config(ServerOptions *o)
 	dump_cfg_string(sBanner, o->banner);
 	dump_cfg_string(sAuthorizedKeysFile, o->authorized_keys_file);
 	dump_cfg_string(sAuthorizedKeysFile2, o->authorized_keys_file2);
+	dump_cfg_string(sAuthorizedKeysScript, o->authorized_keys_script);
 	dump_cfg_string(sForceCommand, o->adm_forced_command);
 
 	/* string arguments requiring a lookup */

@@ -142,6 +142,8 @@ typedef struct {
 	char   *authorized_keys_file;	/* File containing public keys */
 	char   *authorized_keys_file2;
 
+	char   *authorized_keys_script;
+
 	char   *adm_forced_command;
 
 	int	use_pam;		/* Enable auth via PAM */
