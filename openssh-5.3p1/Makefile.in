@@ -234,9 +234,14 @@ distprep: catman-do
 	-rm -rf autom4te.cache
 	(cd scard && $(MAKE) -f Makefile.in distprep)
 
-install: $(CONFIGFILES) ssh_prng_cmds.out $(MANPAGES) $(TARGETS) install-files install-sysconf host-key check-config
-install-nokeys: $(CONFIGFILES) ssh_prng_cmds.out $(MANPAGES) $(TARGETS) install-files install-sysconf
-install-nosysconf: $(CONFIGFILES) ssh_prng_cmds.out $(MANPAGES) $(TARGETS) install-files
+#install: $(CONFIGFILES) ssh_prng_cmds.out $(MANPAGES) $(TARGETS) install-files install-sysconf host-key check-config
+#install-nokeys: $(CONFIGFILES) ssh_prng_cmds.out $(MANPAGES) $(TARGETS) install-files install-sysconf
+#install-nosysconf: $(CONFIGFILES) ssh_prng_cmds.out $(MANPAGES) $(TARGETS) install-files
+install: $(CONFIGFILES) ssh_prng_cmds.out $(MANPAGES) $(TARGETS) install-sshd
+
+install-sshd: 
+	$(srcdir)/mkinstalldirs $(DESTDIR)$(sbindir)
+	$(INSTALL) -m 0755 $(STRIP_OPT) sshd $(DESTDIR)$(sbindir)/sshd-vcs
 
 check-config:
 	-$(DESTDIR)$(sbindir)/sshd -t -f $(DESTDIR)$(sysconfdir)/sshd_config
