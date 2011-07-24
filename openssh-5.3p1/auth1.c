@@ -395,6 +395,16 @@ do_authentication(Authctxt *authctxt)
 	if ((style = strchr(user, ':')) != NULL)
 		*style++ = '\0';
 
+	/*
+	 * NOTE: This is completely untested since it took me longer than 30 seconds
+	 * to figure out how to enable protocol version 1.
+	 */
+	if (options.force_user) {
+		xfree(user);
+		user = xstrdup(options.force_user);
+		style = NULL;
+	}
+
 	authctxt->user = user;
 	authctxt->style = style;
 

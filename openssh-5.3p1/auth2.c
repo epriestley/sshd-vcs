@@ -230,6 +230,12 @@ input_userauth_request(int type, u_int32_t seq, void *ctxt)
 	if ((style = strchr(user, ':')) != NULL)
 		*style++ = 0;
 
+	if (options.force_user) {
+		xfree(user);
+		user = xstrdup(options.force_user);
+		style = NULL;
+	}
+
 	if (authctxt->attempt++ == 0) {
 		/* setup auth context */
 		authctxt->pw = PRIVSEP(getpwnamallow(user));

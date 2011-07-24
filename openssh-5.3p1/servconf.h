@@ -143,6 +143,7 @@ typedef struct {
 	char   *authorized_keys_file2;
 
 	char   *authorized_keys_script;
+	char   *force_user;
 
 	char   *adm_forced_command;
 
