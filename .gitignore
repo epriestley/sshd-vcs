@@ -1,6 +1,7 @@
 .DS_Store
 *.o
 *.out
+*.pid
 
 /openssh-5.3p1/Makefile
 /openssh-5.3p1/buildpkg.sh
