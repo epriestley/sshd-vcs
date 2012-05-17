@@ -1,5 +1,5 @@
-diff -u openssh-5.9p1-orig/auth1.c openssh-5.9p1/auth1.c
---- openssh-5.9p1-orig/auth1.c	2010-08-31 22:36:39.000000000 +1000
+diff -u externals/openssh-5.9p1-orig/auth1.c openssh-5.9p1/auth1.c
+--- externals/openssh-5.9p1-orig/auth1.c	2010-08-31 22:36:39.000000000 +1000
 +++ openssh-5.9p1/auth1.c	2012-05-17 16:56:56.403739532 +1000
 @@ -395,6 +395,16 @@
  	if ((style = strchr(user, ':')) != NULL)
@@ -18,8 +18,8 @@ diff -u openssh-5.9p1-orig/auth1.c openssh-5.9p1/auth1.c
  	authctxt->user = user;
  	authctxt->style = style;
  
-diff -u openssh-5.9p1-orig/auth2.c openssh-5.9p1/auth2.c
---- openssh-5.9p1-orig/auth2.c	2011-05-05 14:04:11.000000000 +1000
+diff -u externals/openssh-5.9p1-orig/auth2.c openssh-5.9p1/auth2.c
+--- externals/openssh-5.9p1-orig/auth2.c	2011-05-05 14:04:11.000000000 +1000
 +++ openssh-5.9p1/auth2.c	2012-05-17 16:58:00.119742991 +1000
 @@ -230,6 +230,12 @@
  	if ((style = strchr(user, ':')) != NULL)
@@ -34,8 +34,8 @@ diff -u openssh-5.9p1-orig/auth2.c openssh-5.9p1/auth2.c
  	if (authctxt->attempt++ == 0) {
  		/* setup auth context */
  		authctxt->pw = PRIVSEP(getpwnamallow(user));
-diff -u openssh-5.9p1-orig/auth2-pubkey.c openssh-5.9p1/auth2-pubkey.c
---- openssh-5.9p1-orig/auth2-pubkey.c	2011-05-29 21:39:38.000000000 +1000
+diff -u externals/openssh-5.9p1-orig/auth2-pubkey.c openssh-5.9p1/auth2-pubkey.c
+--- externals/openssh-5.9p1-orig/auth2-pubkey.c	2011-05-29 21:39:38.000000000 +1000
 +++ openssh-5.9p1/auth2-pubkey.c	2012-05-17 17:04:18.395763536 +1000
 @@ -377,6 +377,97 @@
  	return found_key;
@@ -151,8 +151,8 @@ diff -u openssh-5.9p1-orig/auth2-pubkey.c openssh-5.9p1/auth2-pubkey.c
  	return success;
  }
  
-diff -u openssh-5.9p1-orig/auth.c openssh-5.9p1/auth.c
---- openssh-5.9p1-orig/auth.c	2011-05-29 21:40:42.000000000 +1000
+diff -u externals/openssh-5.9p1-orig/auth.c openssh-5.9p1/auth.c
+--- externals/openssh-5.9p1-orig/auth.c	2011-05-29 21:40:42.000000000 +1000
 +++ openssh-5.9p1/auth.c	2012-05-17 17:05:18.847766819 +1000
 @@ -362,6 +362,15 @@
  	return expand_authorized_keys(options.authorized_principals_file, pw);
@@ -170,8 +170,8 @@ diff -u openssh-5.9p1-orig/auth.c openssh-5.9p1/auth.c
  /* return ok if key exists in sysfile or userfile */
  HostStatus
  check_key_in_hostfiles(struct passwd *pw, Key *key, const char *host,
-diff -u openssh-5.9p1-orig/auth.h openssh-5.9p1/auth.h
---- openssh-5.9p1-orig/auth.h	2011-05-29 21:39:38.000000000 +1000
+diff -u externals/openssh-5.9p1-orig/auth.h openssh-5.9p1/auth.h
+--- externals/openssh-5.9p1-orig/auth.h	2011-05-29 21:39:38.000000000 +1000
 +++ openssh-5.9p1/auth.h	2012-05-17 17:07:24.287773633 +1000
 @@ -170,6 +170,7 @@
  
@@ -181,370 +181,13 @@ diff -u openssh-5.9p1-orig/auth.h openssh-5.9p1/auth.h
  
  FILE	*auth_openkeyfile(const char *, struct passwd *, int);
  FILE	*auth_openprincipals(const char *, struct passwd *, int);
-Common subdirectories: openssh-5.9p1-orig/contrib and openssh-5.9p1/contrib
-diff -u openssh-5.9p1-orig/Makefile.in openssh-5.9p1/Makefile.in
---- openssh-5.9p1-orig/Makefile.in	2011-08-06 06:15:18.000000000 +1000
-+++ openssh-5.9p1/Makefile.in	2012-05-17 17:10:34.547783967 +1000
-@@ -231,9 +231,14 @@
- 	$(AUTORECONF)
- 	-rm -rf autom4te.cache
- 
--install: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files install-sysconf host-key check-config
--install-nokeys: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files install-sysconf
--install-nosysconf: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files
-+#install: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files install-sysconf host-key check-config
-+#install-nokeys: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files install-sysconf
-+#install-nosysconf: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files
-+install: $(CONFIGFILES) ssh_prng_cmds.out $(MANPAGES) $(TARGETS) install-sshd
-+
-+install-sshd: 
-+	$(srcdir)/mkinstalldirs $(DESTDIR)$(sbindir)
-+	$(INSTALL) -m 0755 $(STRIP_OPT) sshd $(DESTDIR)$(sbindir)/sshd-vcs
- 
- check-config:
- 	-$(DESTDIR)$(sbindir)/sshd -t -f $(DESTDIR)$(sysconfdir)/sshd_config
-Common subdirectories: openssh-5.9p1-orig/openbsd-compat and openssh-5.9p1/openbsd-compat
-Common subdirectories: openssh-5.9p1-orig/regress and openssh-5.9p1/regress
-Common subdirectories: openssh-5.9p1-orig/scard and openssh-5.9p1/scard
-diff -u openssh-5.9p1-orig/servconf.c openssh-5.9p1/servconf.c
---- openssh-5.9p1-orig/servconf.c	2011-06-23 08:30:03.000000000 +1000
-+++ openssh-5.9p1/servconf.c	2012-05-17 17:16:56.303804701 +1000
-@@ -126,6 +126,8 @@
- 	options->use_dns = -1;
- 	options->client_alive_interval = -1;
- 	options->client_alive_count_max = -1;
-+	options->authorized_keys_script = NULL;
-+	options->force_user = NULL;
- 	options->num_authkeys_files = 0;
- 	options->num_accept_env = 0;
- 	options->permit_tun = -1;
-@@ -318,6 +320,8 @@
- 	sBanner, sUseDNS, sHostbasedAuthentication,
- 	sHostbasedUsesNameFromPacketOnly, sClientAliveInterval,
- 	sClientAliveCountMax, sAuthorizedKeysFile,
-+	sAuthorizedKeysScript,
-+	sForceUser,
- 	sGssAuthentication, sGssCleanupCreds, sAcceptEnv, sPermitTunnel,
- 	sMatch, sPermitOpen, sForceCommand, sChrootDirectory,
- 	sUsePrivilegeSeparation, sAllowAgentForwarding,
-@@ -435,6 +439,8 @@
- 	{ "clientalivecountmax", sClientAliveCountMax, SSHCFG_GLOBAL },
- 	{ "authorizedkeysfile", sAuthorizedKeysFile, SSHCFG_ALL },
- 	{ "authorizedkeysfile2", sDeprecated, SSHCFG_ALL },
-+	{ "authorizedkeysscript", sAuthorizedKeysScript, SSHCFG_GLOBAL },
-+	{ "forceuser", sForceUser, SSHCFG_GLOBAL },
- 	{ "useprivilegeseparation", sUsePrivilegeSeparation, SSHCFG_GLOBAL},
- 	{ "acceptenv", sAcceptEnv, SSHCFG_GLOBAL },
- 	{ "permittunnel", sPermitTunnel, SSHCFG_ALL },
-@@ -1267,6 +1273,20 @@
- 		}
- 		break;
- 
-+	case sAuthorizedKeysScript:
-+		charptr = &options->authorized_keys_script;
-+		goto parse_filename;
-+
-+	case sForceUser:
-+		arg = strdelim(&cp);
-+		if (!arg || *arg == '\0') {
-+			fatal("%s line %d: Missing argument.", filename, linenum);
-+		}
-+		if (options->force_user == NULL) {
-+			options->force_user = xstrdup(arg);
-+		}
-+		break;
-+
- 	case sClientAliveInterval:
- 		intptr = &options->client_alive_interval;
- 		goto parse_time;
-@@ -1752,6 +1772,8 @@
- 	dump_cfg_string(sCiphers, o->ciphers);
- 	dump_cfg_string(sMacs, o->macs);
- 	dump_cfg_string(sBanner, o->banner);
-+	dump_cfg_string(sAuthorizedKeysScript, o->authorized_keys_script);
-+	dump_cfg_string(sForceUser, o->force_user);
- 	dump_cfg_string(sForceCommand, o->adm_forced_command);
- 	dump_cfg_string(sChrootDirectory, o->chroot_directory);
- 	dump_cfg_string(sTrustedUserCAKeys, o->trusted_user_ca_keys);
-diff -u openssh-5.9p1-orig/servconf.h openssh-5.9p1/servconf.h
---- openssh-5.9p1-orig/servconf.h	2011-06-23 08:30:03.000000000 +1000
-+++ openssh-5.9p1/servconf.h	2012-05-17 17:17:41.191807138 +1000
-@@ -154,6 +154,9 @@
- 	u_int num_authkeys_files;	/* Files containing public keys */
- 	char   *authorized_keys_files[MAX_AUTHKEYS_FILES];
- 
-+	char   *authorized_keys_script;
-+	char   *force_user;
-+
- 	char   *adm_forced_command;
- 
- 	int	use_pam;		/* Enable auth via PAM */
-Only in openssh-5.9p1: acss.o
-Only in openssh-5.9p1: addrmatch.o
-Only in openssh-5.9p1: atomicio.o
-Only in openssh-5.9p1: audit-bsm.o
-Only in openssh-5.9p1: audit-linux.o
-Only in openssh-5.9p1: audit.o
-diff -u openssh-5.9p1-orig/auth1.c openssh-5.9p1/auth1.c
---- openssh-5.9p1-orig/auth1.c	2010-08-31 22:36:39.000000000 +1000
-+++ openssh-5.9p1/auth1.c	2012-05-17 16:56:56.403739532 +1000
-@@ -395,6 +395,16 @@
- 	if ((style = strchr(user, ':')) != NULL)
- 		*style++ = '\0';
- 
-+	/*
-+	 * NOTE: This is completely untested since it took me longer than 30 seconds
-+	 * to figure out how to enable protocol version 1.
-+	 */
-+	if (options.force_user) {
-+		xfree(user);
-+		user = xstrdup(options.force_user);
-+		style = NULL;
-+	}
-+
- 	authctxt->user = user;
- 	authctxt->style = style;
- 
-Only in openssh-5.9p1: auth1.o
-diff -u openssh-5.9p1-orig/auth2.c openssh-5.9p1/auth2.c
---- openssh-5.9p1-orig/auth2.c	2011-05-05 14:04:11.000000000 +1000
-+++ openssh-5.9p1/auth2.c	2012-05-17 16:58:00.119742991 +1000
-@@ -230,6 +230,12 @@
- 	if ((style = strchr(user, ':')) != NULL)
- 		*style++ = 0;
- 
-+	if (options.force_user) {
-+		xfree(user);
-+		user = xstrdup(options.force_user);
-+		style = NULL;
-+	}
-+
- 	if (authctxt->attempt++ == 0) {
- 		/* setup auth context */
- 		authctxt->pw = PRIVSEP(getpwnamallow(user));
-Only in openssh-5.9p1: auth2-chall.o
-Only in openssh-5.9p1: auth2-gss.o
-Only in openssh-5.9p1: auth2-hostbased.o
-Only in openssh-5.9p1: auth2-jpake.o
-Only in openssh-5.9p1: auth2-kbdint.o
-Only in openssh-5.9p1: auth2-none.o
-Only in openssh-5.9p1: auth2.o
-Only in openssh-5.9p1: auth2-passwd.o
-diff -u openssh-5.9p1-orig/auth2-pubkey.c openssh-5.9p1/auth2-pubkey.c
---- openssh-5.9p1-orig/auth2-pubkey.c	2011-05-29 21:39:38.000000000 +1000
-+++ openssh-5.9p1/auth2-pubkey.c	2012-05-17 17:04:18.395763536 +1000
-@@ -377,6 +377,97 @@
- 	return found_key;
- }
- 
-+/* check to see if the script specified by file can authorize the key
-+ *
-+ * the script will have the key written to STDIN, which is identical
-+ * to the normal public key format.
-+ *
-+ * the script must exit with either 0 for success or 1 for failure.
-+ * the script can print login options (if any) to STDOUT. No whitepace should be added
-+ * to the output.
-+ *
-+ * Use with caution: the script can hang sshd. It is recommended you code the script
-+ * with a timeout set if it cannot determine authenication quickly.
-+ */
-+static int
-+user_key_found_by_script(struct passwd *pw, Key *key, char *file)
-+{
-+	pid_t pid;
-+	char line[SSH_MAX_PUBKEY_BYTES];
-+	int pipe_in[2];
-+	int pipe_out[2];
-+	int exit_code = 1;
-+	int success = 0;
-+	FILE *f;
-+	//mysig_t oldsig;
-+
-+	pipe(pipe_in);
-+	pipe(pipe_out);
-+
-+	//oldsig = signal(SIGCHLD, SIG_IGN);
-+	temporarily_use_uid(pw);
-+
-+	debug3("user_key_found_by_script: executing %s", file);
-+
-+	switch ((pid = fork())) {
-+	case -1:
-+		error("fork(): %s", strerror(errno));
-+		restore_uid();
-+		return (-1);
-+	case 0:
-+		/* setup input pipe */
-+		close(pipe_in[1]);
-+		dup2(pipe_in[0], 0);
-+		close(pipe_in[0]);
-+
-+		/* setup output pipe */
-+		close(pipe_out[0]);
-+		dup2(pipe_out[1], 1);
-+		close(pipe_out[1]);
-+
-+		execl(file, file, NULL);
-+
-+		/* exec failed */
-+		error("execl(): %s", strerror(errno));
-+		_exit(1);
-+	default:
-+		debug3("user_key_found_by_script: script pid %d", pid);
-+
-+		close(pipe_in[0]);
-+		close(pipe_out[1]);
-+
-+		f = fdopen(pipe_in[1], "w");
-+		key_write(key, f);
-+		fclose(f);
-+
-+		while(waitpid(pid, &exit_code, 0) < 0) {
-+			switch(errno) {
-+			case EINTR:
-+				debug3("user_key_found_by_script: waitpid() EINTR, continuing");
-+				continue;
-+			default:
-+				error("waitpid(): %s", strerror(errno));
-+				goto waitpid_error;
-+			}
-+		}
-+		if (WIFEXITED(exit_code) && WEXITSTATUS(exit_code) == 0) {
-+			int amt_read = read(pipe_out[0], line, sizeof(line) - 1);
-+			line[amt_read] = ' ';
-+			line[amt_read + 1] = 0;
-+			debug3("user_key_found_by_script: options: %s", line);
-+			if (auth_parse_options(pw, line, file, 0) == 1)
-+				success = 1;
-+		}
-+	 waitpid_error:
-+		close(pipe_out[0]);
-+	}
-+
-+	restore_uid();
-+	//signal(SIGCHLD, oldsig);
-+
-+	return success;
-+}
-+
- /* Authenticate a certificate key against TrustedUserCAKeys */
- static int
- user_cert_trusted_ca(struct passwd *pw, Key *key)
-@@ -455,6 +546,15 @@
- 		xfree(file);
- 	}
- 
-+	if (success)
-+		return success;
-+
-+	/* try the script to find the key */
-+	if ((file = authorized_keys_script(pw))) {
-+		success = user_key_found_by_script(pw, key, file);
-+		xfree(file);
-+	}
-+
- 	return success;
- }
- 
-Only in openssh-5.9p1: auth2-pubkey.o
-Only in openssh-5.9p1: auth-bsdauth.o
-diff -u openssh-5.9p1-orig/auth.c openssh-5.9p1/auth.c
---- openssh-5.9p1-orig/auth.c	2011-05-29 21:40:42.000000000 +1000
-+++ openssh-5.9p1/auth.c	2012-05-17 17:05:18.847766819 +1000
-@@ -362,6 +362,15 @@
- 	return expand_authorized_keys(options.authorized_principals_file, pw);
- }
- 
-+char *
-+authorized_keys_script(struct passwd *pw)
-+{
-+	if (options.authorized_keys_script)
-+		return expand_authorized_keys(options.authorized_keys_script, pw);
-+	else
-+		return NULL;
-+}
-+
- /* return ok if key exists in sysfile or userfile */
- HostStatus
- check_key_in_hostfiles(struct passwd *pw, Key *key, const char *host,
-Only in openssh-5.9p1: auth-chall.o
-Only in openssh-5.9p1: authfd.o
-Only in openssh-5.9p1: authfile.o
-diff -u openssh-5.9p1-orig/auth.h openssh-5.9p1/auth.h
---- openssh-5.9p1-orig/auth.h	2011-05-29 21:39:38.000000000 +1000
-+++ openssh-5.9p1/auth.h	2012-05-17 17:07:24.287773633 +1000
-@@ -170,6 +170,7 @@
- 
- char	*expand_authorized_keys(const char *, struct passwd *pw);
- char	*authorized_principals_file(struct passwd *);
-+char	*authorized_keys_script(struct passwd *);
- 
- FILE	*auth_openkeyfile(const char *, struct passwd *, int);
- FILE	*auth_openprincipals(const char *, struct passwd *, int);
-Only in openssh-5.9p1: auth-krb5.o
-Only in openssh-5.9p1: auth.o
-Only in openssh-5.9p1: auth-options.o
-Only in openssh-5.9p1: auth-pam.o
-Only in openssh-5.9p1: auth-passwd.o
-Only in openssh-5.9p1: auth-rhosts.o
-Only in openssh-5.9p1: auth-rh-rsa.o
-Only in openssh-5.9p1: auth-rsa.o
-Only in openssh-5.9p1: auth-shadow.o
-Only in openssh-5.9p1: auth-sia.o
-Only in openssh-5.9p1: auth-skey.o
-Only in openssh-5.9p1: bufaux.o
-Only in openssh-5.9p1: bufbn.o
-Only in openssh-5.9p1: bufec.o
-Only in openssh-5.9p1: buffer.o
 Only in openssh-5.9p1: buildpkg.sh
-Only in openssh-5.9p1: canohost.o
-Only in openssh-5.9p1: channels.o
-Only in openssh-5.9p1: cipher-3des1.o
-Only in openssh-5.9p1: cipher-acss.o
-Only in openssh-5.9p1: cipher-aes.o
-Only in openssh-5.9p1: cipher-bf1.o
-Only in openssh-5.9p1: cipher-ctr.o
-Only in openssh-5.9p1: cipher.o
-Only in openssh-5.9p1: cleanup.o
-Only in openssh-5.9p1: clientloop.o
-Only in openssh-5.9p1: compat.o
-Only in openssh-5.9p1: compress.o
 Only in openssh-5.9p1: config.h
-Only in openssh-5.9p1: config.log
 Only in openssh-5.9p1: config.status
-Common subdirectories: openssh-5.9p1-orig/contrib and openssh-5.9p1/contrib
-Only in openssh-5.9p1: crc32.o
-Only in openssh-5.9p1: deattack.o
-Only in openssh-5.9p1: dh.o
-Only in openssh-5.9p1: dispatch.o
-Only in openssh-5.9p1: dns.o
-Only in openssh-5.9p1: entropy.o
-Only in openssh-5.9p1: fatal.o
-Only in openssh-5.9p1: groupaccess.o
-Only in openssh-5.9p1: gss-genr.o
-Only in openssh-5.9p1: gss-serv-krb5.o
-Only in openssh-5.9p1: gss-serv.o
-Only in openssh-5.9p1: hostfile.o
-Only in openssh-5.9p1: jpake.o
-Only in openssh-5.9p1: kexdhc.o
-Only in openssh-5.9p1: kexdh.o
-Only in openssh-5.9p1: kexdhs.o
-Only in openssh-5.9p1: kexecdhc.o
-Only in openssh-5.9p1: kexecdh.o
-Only in openssh-5.9p1: kexecdhs.o
-Only in openssh-5.9p1: kexgexc.o
-Only in openssh-5.9p1: kexgex.o
-Only in openssh-5.9p1: kexgexs.o
-Only in openssh-5.9p1: kex.o
-Only in openssh-5.9p1: key.o
-Only in openssh-5.9p1: libssh.a
-Only in openssh-5.9p1: loginrec.o
-Only in openssh-5.9p1: log.o
-Only in openssh-5.9p1: mac.o
+Common subdirectories: externals/openssh-5.9p1-orig/contrib and openssh-5.9p1/contrib
 Only in openssh-5.9p1: Makefile
-diff -u openssh-5.9p1-orig/Makefile.in openssh-5.9p1/Makefile.in
---- openssh-5.9p1-orig/Makefile.in	2011-08-06 06:15:18.000000000 +1000
+diff -u externals/openssh-5.9p1-orig/Makefile.in openssh-5.9p1/Makefile.in
+--- externals/openssh-5.9p1-orig/Makefile.in	2011-08-06 06:15:18.000000000 +1000
 +++ openssh-5.9p1/Makefile.in	2012-05-17 17:26:18.855835254 +1000
 @@ -231,9 +231,14 @@
  	$(AUTORECONF)
@@ -564,47 +207,13 @@ diff -u openssh-5.9p1-orig/Makefile.in openssh-5.9p1/Makefile.in
  
  check-config:
  	-$(DESTDIR)$(sbindir)/sshd -t -f $(DESTDIR)$(sysconfdir)/sshd_config
-Only in openssh-5.9p1: Makefile.in~
-Only in openssh-5.9p1: match.o
-Only in openssh-5.9p1: md5crypt.o
-Only in openssh-5.9p1: md-sha256.o
-Only in openssh-5.9p1: misc.o
-Only in openssh-5.9p1: moduli.5.out
-Only in openssh-5.9p1: moduli.o
-Only in openssh-5.9p1: moduli.out
-Only in openssh-5.9p1: monitor_fdpass.o
-Only in openssh-5.9p1: monitor_mm.o
-Only in openssh-5.9p1: monitor.o
-Only in openssh-5.9p1: monitor_wrap.o
-Only in openssh-5.9p1: msg.o
-Only in openssh-5.9p1: mux.o
-Only in openssh-5.9p1: nchan.o
-Common subdirectories: openssh-5.9p1-orig/openbsd-compat and openssh-5.9p1/openbsd-compat
+Common subdirectories: externals/openssh-5.9p1-orig/openbsd-compat and openssh-5.9p1/openbsd-compat
 Only in openssh-5.9p1: opensshd.init
 Only in openssh-5.9p1: openssh.xml
-Only in openssh-5.9p1: packet.o
-Only in openssh-5.9p1: platform.o
-Only in openssh-5.9p1: progressmeter.o
-Only in openssh-5.9p1: readconf.o
-Only in openssh-5.9p1: readpass.o
-Common subdirectories: openssh-5.9p1-orig/regress and openssh-5.9p1/regress
-Only in openssh-5.9p1: rijndael.o
-Only in openssh-5.9p1: roaming_client.o
-Only in openssh-5.9p1: roaming_common.o
-Only in openssh-5.9p1: roaming_dummy.o
-Only in openssh-5.9p1: roaming_serv.o
-Only in openssh-5.9p1: rsa.o
-Only in openssh-5.9p1: sandbox-darwin.o
-Only in openssh-5.9p1: sandbox-null.o
-Only in openssh-5.9p1: sandbox-rlimit.o
-Only in openssh-5.9p1: sandbox-systrace.o
-Common subdirectories: openssh-5.9p1-orig/scard and openssh-5.9p1/scard
-Only in openssh-5.9p1: schnorr.o
-Only in openssh-5.9p1: scp
-Only in openssh-5.9p1: scp.1.out
-Only in openssh-5.9p1: scp.o
-diff -u openssh-5.9p1-orig/servconf.c openssh-5.9p1/servconf.c
---- openssh-5.9p1-orig/servconf.c	2011-06-23 08:30:03.000000000 +1000
+Common subdirectories: externals/openssh-5.9p1-orig/regress and openssh-5.9p1/regress
+Common subdirectories: externals/openssh-5.9p1-orig/scard and openssh-5.9p1/scard
+diff -u externals/openssh-5.9p1-orig/servconf.c openssh-5.9p1/servconf.c
+--- externals/openssh-5.9p1-orig/servconf.c	2011-06-23 08:30:03.000000000 +1000
 +++ openssh-5.9p1/servconf.c	2012-05-17 17:16:56.303804701 +1000
 @@ -126,6 +126,8 @@
  	options->use_dns = -1;
@@ -663,8 +272,8 @@ diff -u openssh-5.9p1-orig/servconf.c openssh-5.9p1/servconf.c
  	dump_cfg_string(sForceCommand, o->adm_forced_command);
  	dump_cfg_string(sChrootDirectory, o->chroot_directory);
  	dump_cfg_string(sTrustedUserCAKeys, o->trusted_user_ca_keys);
-diff -u openssh-5.9p1-orig/servconf.h openssh-5.9p1/servconf.h
---- openssh-5.9p1-orig/servconf.h	2011-06-23 08:30:03.000000000 +1000
+diff -u externals/openssh-5.9p1-orig/servconf.h openssh-5.9p1/servconf.h
+--- externals/openssh-5.9p1-orig/servconf.h	2011-06-23 08:30:03.000000000 +1000
 +++ openssh-5.9p1/servconf.h	2012-05-17 17:17:41.191807138 +1000
 @@ -154,6 +154,9 @@
  	u_int num_authkeys_files;	/* Files containing public keys */
@@ -676,61 +285,4 @@ diff -u openssh-5.9p1-orig/servconf.h openssh-5.9p1/servconf.h
  	char   *adm_forced_command;
  
  	int	use_pam;		/* Enable auth via PAM */
-Only in openssh-5.9p1: servconf.o
-Only in openssh-5.9p1: serverloop.o
-Only in openssh-5.9p1: session.o
-Only in openssh-5.9p1: sftp
-Only in openssh-5.9p1: sftp.1.out
-Only in openssh-5.9p1: sftp-client.o
-Only in openssh-5.9p1: sftp-common.o
-Only in openssh-5.9p1: sftp-glob.o
-Only in openssh-5.9p1: sftp.o
-Only in openssh-5.9p1: sftp-server
-Only in openssh-5.9p1: sftp-server.8.out
-Only in openssh-5.9p1: sftp-server-main.o
-Only in openssh-5.9p1: sftp-server.o
-Only in openssh-5.9p1: ssh
-Only in openssh-5.9p1: ssh.1.out
-Only in openssh-5.9p1: ssh-add
-Only in openssh-5.9p1: ssh-add.1.out
-Only in openssh-5.9p1: ssh-add.o
-Only in openssh-5.9p1: ssh-agent
-Only in openssh-5.9p1: ssh-agent.1.out
-Only in openssh-5.9p1: ssh-agent.o
-Only in openssh-5.9p1: ssh_config.5.out
-Only in openssh-5.9p1: ssh_config.out
-Only in openssh-5.9p1: sshconnect1.o
-Only in openssh-5.9p1: sshconnect2.o
-Only in openssh-5.9p1: sshconnect.o
-Only in openssh-5.9p1: sshd
-Only in openssh-5.9p1: sshd.8.out
-Only in openssh-5.9p1: sshd_config.5.out
-Only in openssh-5.9p1: sshd_config.out
-Only in openssh-5.9p1: sshd.o
-Only in openssh-5.9p1: ssh-dss.o
-Only in openssh-5.9p1: ssh-ecdsa.o
-Only in openssh-5.9p1: ssh-keygen
-Only in openssh-5.9p1: ssh-keygen.1.out
-Only in openssh-5.9p1: ssh-keygen.o
-Only in openssh-5.9p1: ssh-keyscan
-Only in openssh-5.9p1: ssh-keyscan.1.out
-Only in openssh-5.9p1: ssh-keyscan.o
-Only in openssh-5.9p1: ssh-keysign
-Only in openssh-5.9p1: ssh-keysign.8.out
-Only in openssh-5.9p1: ssh-keysign.o
-Only in openssh-5.9p1: sshlogin.o
-Only in openssh-5.9p1: ssh.o
-Only in openssh-5.9p1: ssh-pkcs11-client.o
-Only in openssh-5.9p1: ssh-pkcs11-helper
-Only in openssh-5.9p1: ssh-pkcs11-helper.8.out
-Only in openssh-5.9p1: ssh-pkcs11-helper.o
-Only in openssh-5.9p1: ssh-pkcs11.o
-Only in openssh-5.9p1: sshpty.o
-Only in openssh-5.9p1: ssh-rsa.o
-Only in openssh-5.9p1: sshtty.o
 Only in openssh-5.9p1: survey.sh
-Only in openssh-5.9p1: ttymodes.o
-Only in openssh-5.9p1: uidswap.o
-Only in openssh-5.9p1: umac.o
-Only in openssh-5.9p1: uuencode.o
-Only in openssh-5.9p1: xmalloc.o
