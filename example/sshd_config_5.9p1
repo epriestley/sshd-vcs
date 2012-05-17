@@ -7,9 +7,6 @@ PrintMotd no
 PrintLastLog no
 PasswordAuthentication no
 
-AuthorizedKeysFile	    none
-AuthorizedKeysFile2	    none
-
-PidFile                 /somewhere/sshd-vcs.pid
-AuthorizedKeysScript    /somewhere/example/auth.sh
+PidFile                 /path/to/example/sshd-vcs.pid
+AuthorizedKeysScript    /path/to/example/auth.php
 ForceUser               git
