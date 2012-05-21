@@ -56,7 +56,7 @@ Basically this allows you to set up sshd something like this:
   - Now, when users login, sshd invokes "auth.sh" and sends it the public key
     on stdin. "auth.sh" checks the database and either sees that the key is
     not present (in which case it exits nonzero), or sees that the key is
-    valid and identifies a system user, in which case it emits
+    valid and identifies an application user, in which case it emits
     'command="serve.sh <appuser>",...' to stdout and exits 0. sshd now invokes
     the command, and puts the user's original command in the environmental
     variable SSH_ORIGINAL_COMMAND. "serve.sh" runs with the valid user
