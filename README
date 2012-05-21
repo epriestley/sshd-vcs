@@ -70,6 +70,28 @@ every possible access setting locked down and real sshd elsewhere.
 
 For some very basic examples, see example/.
 
+Building
+    ./configure --prefix=/opt/sshd-vcs
+    make
+
+Installing
+    sudo make install
+
+Once off setup
+    sudo mkdir /var/empty
+    sudo adduser --system --no-create-home --home /var/run/sshd --shell /usr/sbin/nologin sshd
+    sudo apt-get install -y php5
+    sudo mkdir /opt/sshd-vcs/etc
+    sudo ssh-keygen -t rsa -f /opt/sshd-vcs/etc/ssh_host_rsa_key
+    sudo ssh-keygen -t dsa -f /opt/sshd-vcs/etc/ssh_host_dsa_key
+    Setup paths to auth script in ./example/sshd_config and path to serve.php in auth.php
+
+Running
+    sudo /opt/sshd-vcs/sbin/sshd-vcs -f ./example/sshd_config
+
+Testing
+    ssh git@127.0.0.1
+
 sshd-vcs is based extensively on prior work:
 
   https://github.com/wuputahllc/openssh-for-git

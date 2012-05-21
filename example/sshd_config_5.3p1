@@ -1,0 +1,15 @@
+Protocol 2
+Port 22
+PermitRootLogin no
+AllowAgentForwarding no
+AllowTcpForwarding no
+PrintMotd no
+PrintLastLog no
+PasswordAuthentication no
+
+AuthorizedKeysFile	    none
+AuthorizedKeysFile2	    none
+
+PidFile                 /path/to/example/sshd-vcs.pid
+AuthorizedKeysScript    /path/to/example/auth.php
+ForceUser               git

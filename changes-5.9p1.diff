@@ -1,0 +1,288 @@
+diff -u externals/openssh-5.9p1-orig/auth1.c openssh-5.9p1/auth1.c
+--- externals/openssh-5.9p1-orig/auth1.c	2010-08-31 22:36:39.000000000 +1000
++++ openssh-5.9p1/auth1.c	2012-05-17 16:56:56.403739532 +1000
+@@ -395,6 +395,16 @@
+ 	if ((style = strchr(user, ':')) != NULL)
+ 		*style++ = '\0';
+ 
++	/*
++	 * NOTE: This is completely untested since it took me longer than 30 seconds
++	 * to figure out how to enable protocol version 1.
++	 */
++	if (options.force_user) {
++		xfree(user);
++		user = xstrdup(options.force_user);
++		style = NULL;
++	}
++
+ 	authctxt->user = user;
+ 	authctxt->style = style;
+ 
+diff -u externals/openssh-5.9p1-orig/auth2.c openssh-5.9p1/auth2.c
+--- externals/openssh-5.9p1-orig/auth2.c	2011-05-05 14:04:11.000000000 +1000
++++ openssh-5.9p1/auth2.c	2012-05-17 16:58:00.119742991 +1000
+@@ -230,6 +230,12 @@
+ 	if ((style = strchr(user, ':')) != NULL)
+ 		*style++ = 0;
+ 
++	if (options.force_user) {
++		xfree(user);
++		user = xstrdup(options.force_user);
++		style = NULL;
++	}
++
+ 	if (authctxt->attempt++ == 0) {
+ 		/* setup auth context */
+ 		authctxt->pw = PRIVSEP(getpwnamallow(user));
+diff -u externals/openssh-5.9p1-orig/auth2-pubkey.c openssh-5.9p1/auth2-pubkey.c
+--- externals/openssh-5.9p1-orig/auth2-pubkey.c	2011-05-29 21:39:38.000000000 +1000
++++ openssh-5.9p1/auth2-pubkey.c	2012-05-17 17:04:18.395763536 +1000
+@@ -377,6 +377,97 @@
+ 	return found_key;
+ }
+ 
++/* check to see if the script specified by file can authorize the key
++ *
++ * the script will have the key written to STDIN, which is identical
++ * to the normal public key format.
++ *
++ * the script must exit with either 0 for success or 1 for failure.
++ * the script can print login options (if any) to STDOUT. No whitepace should be added
++ * to the output.
++ *
++ * Use with caution: the script can hang sshd. It is recommended you code the script
++ * with a timeout set if it cannot determine authenication quickly.
++ */
++static int
++user_key_found_by_script(struct passwd *pw, Key *key, char *file)
++{
++	pid_t pid;
++	char line[SSH_MAX_PUBKEY_BYTES];
++	int pipe_in[2];
++	int pipe_out[2];
++	int exit_code = 1;
++	int success = 0;
++	FILE *f;
++	//mysig_t oldsig;
++
++	pipe(pipe_in);
++	pipe(pipe_out);
++
++	//oldsig = signal(SIGCHLD, SIG_IGN);
++	temporarily_use_uid(pw);
++
++	debug3("user_key_found_by_script: executing %s", file);
++
++	switch ((pid = fork())) {
++	case -1:
++		error("fork(): %s", strerror(errno));
++		restore_uid();
++		return (-1);
++	case 0:
++		/* setup input pipe */
++		close(pipe_in[1]);
++		dup2(pipe_in[0], 0);
++		close(pipe_in[0]);
++
++		/* setup output pipe */
++		close(pipe_out[0]);
++		dup2(pipe_out[1], 1);
++		close(pipe_out[1]);
++
++		execl(file, file, NULL);
++
++		/* exec failed */
++		error("execl(): %s", strerror(errno));
++		_exit(1);
++	default:
++		debug3("user_key_found_by_script: script pid %d", pid);
++
++		close(pipe_in[0]);
++		close(pipe_out[1]);
++
++		f = fdopen(pipe_in[1], "w");
++		key_write(key, f);
++		fclose(f);
++
++		while(waitpid(pid, &exit_code, 0) < 0) {
++			switch(errno) {
++			case EINTR:
++				debug3("user_key_found_by_script: waitpid() EINTR, continuing");
++				continue;
++			default:
++				error("waitpid(): %s", strerror(errno));
++				goto waitpid_error;
++			}
++		}
++		if (WIFEXITED(exit_code) && WEXITSTATUS(exit_code) == 0) {
++			int amt_read = read(pipe_out[0], line, sizeof(line) - 1);
++			line[amt_read] = ' ';
++			line[amt_read + 1] = 0;
++			debug3("user_key_found_by_script: options: %s", line);
++			if (auth_parse_options(pw, line, file, 0) == 1)
++				success = 1;
++		}
++	 waitpid_error:
++		close(pipe_out[0]);
++	}
++
++	restore_uid();
++	//signal(SIGCHLD, oldsig);
++
++	return success;
++}
++
+ /* Authenticate a certificate key against TrustedUserCAKeys */
+ static int
+ user_cert_trusted_ca(struct passwd *pw, Key *key)
+@@ -455,6 +546,15 @@
+ 		xfree(file);
+ 	}
+ 
++	if (success)
++		return success;
++
++	/* try the script to find the key */
++	if ((file = authorized_keys_script(pw))) {
++		success = user_key_found_by_script(pw, key, file);
++		xfree(file);
++	}
++
+ 	return success;
+ }
+ 
+diff -u externals/openssh-5.9p1-orig/auth.c openssh-5.9p1/auth.c
+--- externals/openssh-5.9p1-orig/auth.c	2011-05-29 21:40:42.000000000 +1000
++++ openssh-5.9p1/auth.c	2012-05-17 17:05:18.847766819 +1000
+@@ -362,6 +362,15 @@
+ 	return expand_authorized_keys(options.authorized_principals_file, pw);
+ }
+ 
++char *
++authorized_keys_script(struct passwd *pw)
++{
++	if (options.authorized_keys_script)
++		return expand_authorized_keys(options.authorized_keys_script, pw);
++	else
++		return NULL;
++}
++
+ /* return ok if key exists in sysfile or userfile */
+ HostStatus
+ check_key_in_hostfiles(struct passwd *pw, Key *key, const char *host,
+diff -u externals/openssh-5.9p1-orig/auth.h openssh-5.9p1/auth.h
+--- externals/openssh-5.9p1-orig/auth.h	2011-05-29 21:39:38.000000000 +1000
++++ openssh-5.9p1/auth.h	2012-05-17 17:07:24.287773633 +1000
+@@ -170,6 +170,7 @@
+ 
+ char	*expand_authorized_keys(const char *, struct passwd *pw);
+ char	*authorized_principals_file(struct passwd *);
++char	*authorized_keys_script(struct passwd *);
+ 
+ FILE	*auth_openkeyfile(const char *, struct passwd *, int);
+ FILE	*auth_openprincipals(const char *, struct passwd *, int);
+Only in openssh-5.9p1: buildpkg.sh
+Only in openssh-5.9p1: config.h
+Only in openssh-5.9p1: config.status
+Common subdirectories: externals/openssh-5.9p1-orig/contrib and openssh-5.9p1/contrib
+Only in openssh-5.9p1: Makefile
+diff -u externals/openssh-5.9p1-orig/Makefile.in openssh-5.9p1/Makefile.in
+--- externals/openssh-5.9p1-orig/Makefile.in	2011-08-06 06:15:18.000000000 +1000
++++ openssh-5.9p1/Makefile.in	2012-05-17 17:26:18.855835254 +1000
+@@ -231,9 +231,14 @@
+ 	$(AUTORECONF)
+ 	-rm -rf autom4te.cache
+ 
+-install: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files install-sysconf host-key check-config
+-install-nokeys: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files install-sysconf
+-install-nosysconf: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files
++#install: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files install-sysconf host-key check-config
++#install-nokeys: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files install-sysconf
++#install-nosysconf: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-files
++install: $(CONFIGFILES) $(MANPAGES) $(TARGETS) install-sshd
++
++install-sshd: 
++	$(srcdir)/mkinstalldirs $(DESTDIR)$(sbindir)
++	$(INSTALL) -m 0755 $(STRIP_OPT) sshd $(DESTDIR)$(sbindir)/sshd-vcs
+ 
+ check-config:
+ 	-$(DESTDIR)$(sbindir)/sshd -t -f $(DESTDIR)$(sysconfdir)/sshd_config
+Common subdirectories: externals/openssh-5.9p1-orig/openbsd-compat and openssh-5.9p1/openbsd-compat
+Only in openssh-5.9p1: opensshd.init
+Only in openssh-5.9p1: openssh.xml
+Common subdirectories: externals/openssh-5.9p1-orig/regress and openssh-5.9p1/regress
+Common subdirectories: externals/openssh-5.9p1-orig/scard and openssh-5.9p1/scard
+diff -u externals/openssh-5.9p1-orig/servconf.c openssh-5.9p1/servconf.c
+--- externals/openssh-5.9p1-orig/servconf.c	2011-06-23 08:30:03.000000000 +1000
++++ openssh-5.9p1/servconf.c	2012-05-17 17:16:56.303804701 +1000
+@@ -126,6 +126,8 @@
+ 	options->use_dns = -1;
+ 	options->client_alive_interval = -1;
+ 	options->client_alive_count_max = -1;
++	options->authorized_keys_script = NULL;
++	options->force_user = NULL;
+ 	options->num_authkeys_files = 0;
+ 	options->num_accept_env = 0;
+ 	options->permit_tun = -1;
+@@ -318,6 +320,8 @@
+ 	sBanner, sUseDNS, sHostbasedAuthentication,
+ 	sHostbasedUsesNameFromPacketOnly, sClientAliveInterval,
+ 	sClientAliveCountMax, sAuthorizedKeysFile,
++	sAuthorizedKeysScript,
++	sForceUser,
+ 	sGssAuthentication, sGssCleanupCreds, sAcceptEnv, sPermitTunnel,
+ 	sMatch, sPermitOpen, sForceCommand, sChrootDirectory,
+ 	sUsePrivilegeSeparation, sAllowAgentForwarding,
+@@ -435,6 +439,8 @@
+ 	{ "clientalivecountmax", sClientAliveCountMax, SSHCFG_GLOBAL },
+ 	{ "authorizedkeysfile", sAuthorizedKeysFile, SSHCFG_ALL },
+ 	{ "authorizedkeysfile2", sDeprecated, SSHCFG_ALL },
++	{ "authorizedkeysscript", sAuthorizedKeysScript, SSHCFG_GLOBAL },
++	{ "forceuser", sForceUser, SSHCFG_GLOBAL },
+ 	{ "useprivilegeseparation", sUsePrivilegeSeparation, SSHCFG_GLOBAL},
+ 	{ "acceptenv", sAcceptEnv, SSHCFG_GLOBAL },
+ 	{ "permittunnel", sPermitTunnel, SSHCFG_ALL },
+@@ -1267,6 +1273,20 @@
+ 		}
+ 		break;
+ 
++	case sAuthorizedKeysScript:
++		charptr = &options->authorized_keys_script;
++		goto parse_filename;
++
++	case sForceUser:
++		arg = strdelim(&cp);
++		if (!arg || *arg == '\0') {
++			fatal("%s line %d: Missing argument.", filename, linenum);
++		}
++		if (options->force_user == NULL) {
++			options->force_user = xstrdup(arg);
++		}
++		break;
++
+ 	case sClientAliveInterval:
+ 		intptr = &options->client_alive_interval;
+ 		goto parse_time;
+@@ -1752,6 +1772,8 @@
+ 	dump_cfg_string(sCiphers, o->ciphers);
+ 	dump_cfg_string(sMacs, o->macs);
+ 	dump_cfg_string(sBanner, o->banner);
++	dump_cfg_string(sAuthorizedKeysScript, o->authorized_keys_script);
++	dump_cfg_string(sForceUser, o->force_user);
+ 	dump_cfg_string(sForceCommand, o->adm_forced_command);
+ 	dump_cfg_string(sChrootDirectory, o->chroot_directory);
+ 	dump_cfg_string(sTrustedUserCAKeys, o->trusted_user_ca_keys);
+diff -u externals/openssh-5.9p1-orig/servconf.h openssh-5.9p1/servconf.h
+--- externals/openssh-5.9p1-orig/servconf.h	2011-06-23 08:30:03.000000000 +1000
++++ openssh-5.9p1/servconf.h	2012-05-17 17:17:41.191807138 +1000
+@@ -154,6 +154,9 @@
+ 	u_int num_authkeys_files;	/* Files containing public keys */
+ 	char   *authorized_keys_files[MAX_AUTHKEYS_FILES];
+ 
++	char   *authorized_keys_script;
++	char   *force_user;
++
+ 	char   *adm_forced_command;
+ 
+ 	int	use_pam;		/* Enable auth via PAM */
+Only in openssh-5.9p1: survey.sh
